@@ -2,7 +2,7 @@
 # run from repo root: python app/regressWorkoutWeek.py
 import argparse
 
-from humpy.chatSession import ChatSession
+from humpy.session import ChatSession
 
 days=['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
 

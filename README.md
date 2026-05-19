@@ -4,27 +4,19 @@
 
 ## Setup
 
-Config under `.env/`. Path resolution ([`humpy/__init__.py`](humpy/__init__.py)):
-
-| How you run | What happens |
-|-------------|----------------|
-| **Terminal** `cd D:\git\learningAgent` | cwd has `.env/` → repo = cwd |
-| **IDE / other cwd** | Walk parents for `.env/local.json` → use `repoPath` from JSON |
+Config under `.env/` at the repo root (parent of the `humpy` package). Paths come from [`humpy/hPath.py`](humpy/hPath.py) via `PKG_DIR = Path(__file__).resolve().parent` — same install location no matter what your cwd is.
 
 | File | Purpose |
 |------|---------|
 | `.env/humpy.json` | `sdk`, `modelId`, `defaultBot` (gitignored; copy from example) |
 | `.env/model.json` | API models array (gitignored) |
-| `.env/local.json` | `{ "repoPath": "D:\\git\\learningAgent" }` (gitignored) |
 | `.env/humpy.example.json` | template |
 | `.env/model.example.json` | template |
-| `.env/local.example.json` | template |
 
 ```bash
 cd D:\git\learningAgent
 copy .env\humpy.example.json .env\humpy.json
 copy .env\model.example.json .env\model.json
-copy .env\local.example.json .env\local.json
 
 python -m pip install -e .
 ```
@@ -50,7 +42,7 @@ Each **bot** is a folder under `.data/<botName>/`:
   sessions/*.jsonl  # user / assistant turns only
 ```
 
-On first use, `prompt.json` is created from the default in [`humpy/prompt.py`](humpy/prompt.py).
+On first use, `prompt.json` is created from the default in [`humpy/prompt.py`](humpy/prompt.py). Package layout: [`humpy/README.md`](humpy/README.md).
 
 **Migration:** if you have old `.data/chatloop/`, move it to `.data/main/` (sessions + index.jsonl) and add `prompt.json`.
 
@@ -69,4 +61,4 @@ python playground\hw\hwAgent.py
 python playground\chatloop\chatLoop.py
 ```
 
-Overrides: `REPO_PATH`, `LOCAL_JSON`, `HUMPY_JSON`, `MODEL_JSON`, `LOCAL_MODEL_ID`, `HUMPY_SDK`, `HUMPY_BOT`, `CODEX_CWD`
+Overrides: `LOCAL_MODEL_ID`, `HUMPY_SDK`, `HUMPY_BOT`, `CODEX_CWD`

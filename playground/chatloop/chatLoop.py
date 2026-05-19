@@ -1,5 +1,5 @@
 # thin demo: same as humpy chat with bot main (pip install -e . first)
-from humpy.chatSession import ChatSession
+from humpy.session import ChatSession
 
 botName='main'
 sess=ChatSession(botName)

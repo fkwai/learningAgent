@@ -1,36 +1,126 @@
 import argparse
+from datetime import datetime
 
-from humpy import ensureBotDirs,getBotIndexFile,listBots
+from humpy.bot import Bot
 from humpy.memory import loadIndexEntries
-from humpy.chatSession import ChatSession
-from humpy.humpyCfg import loadHumpyCfg
+from humpy.session import ChatSession
+from humpy.config import loadHumpyCfg
+
+PRIMARY_BOT_SHOW=3
+OTHERS_BOT_LIMIT=7
+SESSION_MENU_LIMIT=5
+RESERVED_BOT_INPUT={'new','others'}
+
+def fmtTs(ts):
+    s=(ts or '').strip()
+    if not s:
+        return ''
+    try:
+        if s.endswith('Z'):
+            s=s[:-1]+'+00:00'
+        dt=datetime.fromisoformat(s)
+        return dt.strftime('%Y-%m-%dT%H:%M:%S')
+    except ValueError:
+        pass
+    base=s.split('+')[0].split('Z')[0]
+    if '.' in base:
+        base=base.split('.')[0]
+    return base[:19]
+
+def primaryBots(allBots,defaultBot,n=PRIMARY_BOT_SHOW):
+    primary=[]
+    if defaultBot in allBots and not Bot.isReserved(defaultBot):
+        primary.append(defaultBot)
+    for b in allBots:
+        if b in primary or Bot.isReserved(b):
+            continue
+        primary.append(b)
+        if len(primary)>=n:
+            break
+    return primary
+
+def pickNewBot():
+    while True:
+        name=input('new bot name> ').strip()
+        bot=Bot.adopt(name)
+        if bot:
+            return bot
+        print('cannot use "new" or "others" as a bot name')
+
+def pickFromOthers(primary,allBots):
+    rest=[b for b in allBots if b not in primary and not Bot.isReserved(b)][:OTHERS_BOT_LIMIT]
+    if not rest:
+        print('no other bots')
+        return None
+    print('other bots:',', '.join(rest))
+    while True:
+        pick=input('bot name> ').strip()
+        if not pick:
+            return None
+        if pick.lower() in RESERVED_BOT_INPUT:
+            print('pick a bot name from the list above')
+            continue
+        bot=Bot.adopt(pick)
+        if bot:
+            return bot
+
+def pickBotInteractive():
+    allBots=Bot.listNames()
+    cfg=loadHumpyCfg()
+    primary=primaryBots(allBots,cfg['defaultBot'])
+    if primary:
+        shown=', '.join(primary)
+    else:
+        shown='(none yet)'
+    print(f'who you want to talk to, {shown} or others or new ?')
+    while True:
+        pick=input('> ').strip()
+        if not pick:
+            bot=Bot.adopt(cfg['defaultBot'])
+            if bot:
+                return bot
+            print('default bot name is reserved; pick another')
+            continue
+        pl=pick.lower()
+        if pl=='new':
+            bot=pickNewBot()
+            if bot:
+                return bot
+            continue
+        if pl=='others':
+            bot=pickFromOthers(primary,allBots)
+            if bot:
+                return bot
+            continue
+        bot=Bot.adopt(pick)
+        if bot:
+            return bot
 
 def pickBot(argBot):
     if argBot:
-        ensureBotDirs(argBot)
-        return argBot
-    bots=listBots()
-    print('bots:',', '.join(bots) if bots else '(none)')
-    name=input('bot name> ').strip()
-    if not name:
-        name=loadHumpyCfg()['defaultBot']
-    ensureBotDirs(name)
-    return name
+        if Bot.isReserved(argBot):
+            raise SystemExit('bot name cannot be "new" or "others"')
+        bot=Bot.adopt(argBot)
+        if not bot:
+            raise SystemExit('invalid bot name')
+        return bot
+    return pickBotInteractive()
 
-SESSION_MENU_LIMIT=5
-
-def pickSession(botName,argNew,argResume):
+def pickSession(bot,argNew,argResume):
     if argResume:
         return argResume,True
     if argNew:
         return None,False
-    entries=loadIndexEntries(getBotIndexFile(botName),limit=SESSION_MENU_LIMIT)
+    entries=loadIndexEntries(bot.indexFile,limit=SESSION_MENU_LIMIT)
     entries=list(reversed(entries))
     print('0. new session')
     for i,e in enumerate(entries,1):
         hl=(e.get('headline') or '').strip() or '(untitled)'
-        print(f"  {i}. {hl} | {e.get('sessionId')} | {e.get('createdAt','')}")
-    pick=input(f'pick 0-{SESSION_MENU_LIMIT}> ').strip()
+        sid=e.get('sessionId') or ''
+        ts=fmtTs(e.get('createdAt'))
+        print(f'{i}. {hl} | {sid} | {ts}')
+    maxPick=len(entries)
+    pick=input(f'pick 0-{maxPick}> ').strip()
     if pick in ('','0'):
         return None,False
     if pick.isdigit():
@@ -43,12 +133,12 @@ def pickSession(botName,argNew,argResume):
     return None,False
 
 def cmdChat(args):
-    botName=pickBot(args.bot)
-    sessionId,resume=pickSession(botName,args.new,args.resume)
-    sess=ChatSession(botName,sessionId=sessionId,resume=resume,pickId=args.model_id)
+    bot=pickBot(args.bot)
+    sessionId,resume=pickSession(bot,args.new,args.resume)
+    sess=ChatSession(bot,sessionId=sessionId,resume=resume,pickId=args.model_id)
     mode='resume' if resume else 'new'
     titleHint=f" | {sess.headline}" if sess.headline else ''
-    print(f'humpy chat | bot {botName} | {mode} | session {sess.sessionId}{titleHint} | exit to quit')
+    print(f'humpy chat | bot {bot.name} | {mode} | session {sess.sessionId}{titleHint} | exit to quit')
     while True:
         userText=input('you> ').strip()
         if not userText:

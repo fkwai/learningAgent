@@ -5,3 +5,5 @@
 .env/humpy.json
 .data/
 data/chatloop/
+*__pycache__*
+*.code-workspace

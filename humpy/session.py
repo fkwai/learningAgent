@@ -1,8 +1,8 @@
 import os
 from datetime import datetime,timezone
 
-from humpy import ensureBotDirs,getBotIndexFile,getBotSessionsDir,loadBotDeveloper
-from humpy.humpyCfg import loadHumpyCfg
+from humpy.bot import Bot
+from humpy.config import loadHumpyCfg,loadModel
 from humpy.memory import (
     appendAssistant,
     appendUser,
@@ -14,27 +14,33 @@ from humpy.memory import (
     updateIndexHeadline,
 )
 from humpy.message import complete
-from humpy.modelCfg import loadModel
 from humpy.prompt import DEV_PROMPT_DEFAULT,TITLE_PROMPT
 
 class ChatSession:
-    def __init__(self,botName,sessionId=None,resume=False,headline='',pickId=None,prefix=''):
-        self.botName=botName
-        ensureBotDirs(botName)
+    def __init__(self,bot,sessionId=None,resume=False,headline='',pickId=None,prefix=''):
+        if isinstance(bot,str):
+            bot=Bot.adopt(bot)
+            if not bot:
+                raise ValueError('invalid bot name')
+        elif not isinstance(bot,Bot):
+            raise TypeError('bot must be Bot or str')
+        self.bot=bot
+        self.botName=bot.name
+        bot.ensure()
         humpyCfg=loadHumpyCfg()
         self.sdk=humpyCfg['sdk']
         cfg=loadModel(pickId)
         self.cfg=cfg
         self.pickId=cfg.get('id')
         self.modelName=cfg.get('model')
-        self.indexFile=getBotIndexFile(botName)
+        self.indexFile=bot.indexFile
         if sessionId:
             sid=sessionId
         else:
             stamp=datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')
             sid=(prefix+stamp) if prefix else stamp
         self.sessionId=sid
-        self.sessionPath=os.path.join(getBotSessionsDir(botName),sid+'.jsonl')
+        self.sessionPath=os.path.join(bot.sessionsDir,sid+'.jsonl')
         self.headline=headline
         self.needsHeadline=False
         exists=os.path.isfile(self.sessionPath)
@@ -49,7 +55,7 @@ class ChatSession:
             if not indexHasSession(self.indexFile,sid):
                 registerSession(self.indexFile,{
                     'sessionId':sid,
-                    'botName':botName,
+                    'botName':bot.name,
                     'sessionFile':self.sessionPath.replace('\\','/'),
                     'modelId':self.pickId,
                     'model':self.modelName,
@@ -84,7 +90,7 @@ class ChatSession:
         self.turnNum+=1
         appendUser(self.sessionPath,self.turnNum,userText)
         messages,devFromFile=loadMessages(self.sessionPath)
-        dev=devFromFile or loadBotDeveloper(self.botName) or DEV_PROMPT_DEFAULT
+        dev=devFromFile or self.bot.loadDeveloper() or DEV_PROMPT_DEFAULT
         result=complete(self.cfg,self.sdk,messages,dev,maxTokens=maxTokens)
         appendAssistant(
             self.sessionPath,

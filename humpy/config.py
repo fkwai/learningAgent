@@ -1,7 +1,7 @@
 import json
 import os
 
-from humpy import getHumpyJsonPath
+from humpy.hPath import getHumpyJsonPath,getModelJsonPath
 
 def loadHumpyCfg():
     path=getHumpyJsonPath()
@@ -14,3 +14,14 @@ def loadHumpyCfg():
     modelId=os.environ.get('LOCAL_MODEL_ID','').strip() or cfg.get('modelId') or 'minimax-m27-highspeed'
     defaultBot=os.environ.get('HUMPY_BOT','').strip() or cfg.get('defaultBot') or 'main'
     return {'sdk':sdk,'modelId':modelId,'defaultBot':defaultBot}
+
+def loadModel(pickId=None):
+    pid=pickId or os.environ.get('LOCAL_MODEL_ID','').strip()
+    if not pid:
+        pid=loadHumpyCfg()['modelId']
+    with open(getModelJsonPath(),encoding='utf-8') as f:
+        dictModel=json.load(f)
+    for m in dictModel:
+        if isinstance(m,dict) and m.get('id')==pid:
+            return m
+    raise SystemExit(f'model id not found: {pid}')
