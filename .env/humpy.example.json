@@ -1,5 +1,0 @@
-{
-  "sdk": "anthropic",
-  "modelId": "minimax-m27-highspeed",
-  "defaultBot": "main"
-}

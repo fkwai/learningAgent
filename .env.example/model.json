@@ -2,7 +2,7 @@
   {
     "id": "minimax-m27-highspeed",
     "provider": "minimax",
-    "apiKey": "your-minimax-api-key",
+    "apiKey": "your-api-key-here",
     "model": "MiniMax-M2.7-highspeed",
     "baseUrl": {
       "anthropic": "https://api.minimaxi.com/anthropic",

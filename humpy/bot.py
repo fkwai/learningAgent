@@ -1,6 +1,7 @@
 import json
 import os
 
+from humpy.config import resolveBotSettings,resolvePromptPath
 from humpy.hPath import getBotDir,getBotIndexFile,getBotPromptPath,getBotSessionsDir,getDataDir
 from humpy.prompt import DEV_PROMPT_DEFAULT
 
@@ -62,6 +63,9 @@ class Bot:
     def indexFile(self):
         return getBotIndexFile(self.name)
 
+    def resolvedCfg(self):
+        return resolveBotSettings(self.name)
+
     def ensure(self):
         os.makedirs(self.sessionsDir,exist_ok=True)
         if not os.path.isfile(self.promptPath):
@@ -71,8 +75,12 @@ class Bot:
                 f.write('\n')
 
     def loadDeveloper(self):
-        if not os.path.isfile(self.promptPath):
+        botCfg=self.resolvedCfg()['bot']
+        promptPath=resolvePromptPath(botCfg.get('promptFile'),self.promptPath)
+        if not promptPath or not os.path.isfile(promptPath):
+            promptPath=self.promptPath
+        if not os.path.isfile(promptPath):
             return DEV_PROMPT_DEFAULT
-        with open(self.promptPath,encoding='utf-8') as f:
+        with open(promptPath,encoding='utf-8') as f:
             data=json.load(f)
         return (data.get('developer') or '').strip() or DEV_PROMPT_DEFAULT

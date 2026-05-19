@@ -1,9 +1,7 @@
-.env.local
-.local.json
-.env/model.json
-.env/local.json
-.env/humpy.json
+.env/
+!.env.example/
 .data/
 data/chatloop/
 *__pycache__*
 *.code-workspace
+*.egg-info*

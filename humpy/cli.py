@@ -2,13 +2,10 @@ import argparse
 from datetime import datetime
 
 from humpy.bot import Bot
-from humpy.memory import loadIndexEntries
+from humpy.memory.store import loadIndexEntries
 from humpy.session import ChatSession
 from humpy.config import loadHumpyCfg
 
-PRIMARY_BOT_SHOW=3
-OTHERS_BOT_LIMIT=7
-SESSION_MENU_LIMIT=5
 RESERVED_BOT_INPUT={'new','others'}
 
 def fmtTs(ts):
@@ -27,7 +24,7 @@ def fmtTs(ts):
         base=base.split('.')[0]
     return base[:19]
 
-def primaryBots(allBots,defaultBot,n=PRIMARY_BOT_SHOW):
+def primaryBots(allBots,defaultBot,n):
     primary=[]
     if defaultBot in allBots and not Bot.isReserved(defaultBot):
         primary.append(defaultBot)
@@ -47,8 +44,8 @@ def pickNewBot():
             return bot
         print('cannot use "new" or "others" as a bot name')
 
-def pickFromOthers(primary,allBots):
-    rest=[b for b in allBots if b not in primary and not Bot.isReserved(b)][:OTHERS_BOT_LIMIT]
+def pickFromOthers(primary,allBots,limit):
+    rest=[b for b in allBots if b not in primary and not Bot.isReserved(b)][:limit]
     if not rest:
         print('no other bots')
         return None
@@ -64,10 +61,9 @@ def pickFromOthers(primary,allBots):
         if bot:
             return bot
 
-def pickBotInteractive():
+def pickBotInteractive(cfg):
     allBots=Bot.listNames()
-    cfg=loadHumpyCfg()
-    primary=primaryBots(allBots,cfg['defaultBot'])
+    primary=primaryBots(allBots,cfg['defaultBot'],cfg['primaryBotShow'])
     if primary:
         shown=', '.join(primary)
     else:
@@ -88,7 +84,7 @@ def pickBotInteractive():
                 return bot
             continue
         if pl=='others':
-            bot=pickFromOthers(primary,allBots)
+            bot=pickFromOthers(primary,allBots,cfg['othersBotLimit'])
             if bot:
                 return bot
             continue
@@ -96,7 +92,7 @@ def pickBotInteractive():
         if bot:
             return bot
 
-def pickBot(argBot):
+def pickBot(argBot,cfg):
     if argBot:
         if Bot.isReserved(argBot):
             raise SystemExit('bot name cannot be "new" or "others"')
@@ -104,14 +100,14 @@ def pickBot(argBot):
         if not bot:
             raise SystemExit('invalid bot name')
         return bot
-    return pickBotInteractive()
+    return pickBotInteractive(cfg)
 
-def pickSession(bot,argNew,argResume):
+def pickSession(bot,argNew,argResume,menuLimit):
     if argResume:
         return argResume,True
     if argNew:
         return None,False
-    entries=loadIndexEntries(bot.indexFile,limit=SESSION_MENU_LIMIT)
+    entries=loadIndexEntries(bot.indexFile,limit=menuLimit)
     entries=list(reversed(entries))
     print('0. new session')
     for i,e in enumerate(entries,1):
@@ -133,8 +129,9 @@ def pickSession(bot,argNew,argResume):
     return None,False
 
 def cmdChat(args):
-    bot=pickBot(args.bot)
-    sessionId,resume=pickSession(bot,args.new,args.resume)
+    cfg=loadHumpyCfg()
+    bot=pickBot(args.bot,cfg)
+    sessionId,resume=pickSession(bot,args.new,args.resume,cfg['sessionMenuLimit'])
     sess=ChatSession(bot,sessionId=sessionId,resume=resume,pickId=args.model_id)
     mode='resume' if resume else 'new'
     titleHint=f" | {sess.headline}" if sess.headline else ''
@@ -145,7 +142,8 @@ def cmdChat(args):
             continue
         if userText.lower() in ('exit','quit'):
             break
-        out=sess.turn(userText,maxTokens=args.max_tokens)
+        maxTok=args.max_tokens
+        out=sess.turn(userText,maxTokens=maxTok)
         print('assistant>',out['text'])
         if out.get('headline'):
             print('  title:',out['headline'])
@@ -159,7 +157,7 @@ def main():
     parser.add_argument('--new',action='store_true',help='force new session')
     parser.add_argument('--resume',default=None,metavar='SESSION_ID',help='resume session id')
     parser.add_argument('--model-id',default=None,help='override model id from humpy.json')
-    parser.add_argument('--max-tokens',type=int,default=1024)
+    parser.add_argument('--max-tokens',type=int,default=None,help='override maxOutputTokens from config')
     args=parser.parse_args()
     if args.new and args.resume:
         raise SystemExit('use --new or --resume, not both')

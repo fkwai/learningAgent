@@ -1,0 +1,24 @@
+{
+  "sdk": "anthropic",
+  "modelId": "minimax-m27-highspeed",
+  "defaultBot": "main",
+  "maxRecentTurns": 20,
+  "maxContextTokens": 8000,
+  "sessionTitleMaxChars": 80,
+  "titleSnippetMaxChars": 500,
+  "titleMaxOutputTokens": 64,
+  "autoTitle": true,
+  "saveSessions": true,
+  "sessionMenuLimit": 5,
+  "primaryBotShow": 3,
+  "othersBotLimit": 7,
+  "bots": {
+    "default": {
+      "promptFile": "",
+      "model": "minimax-m27-highspeed",
+      "temperature": 0.7,
+      "maxOutputTokens": 2000
+    },
+    "main": {}
+  }
+}

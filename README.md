@@ -8,15 +8,17 @@ Config under `.env/` at the repo root (parent of the `humpy` package). Paths com
 
 | File | Purpose |
 |------|---------|
-| `.env/humpy.json` | `sdk`, `modelId`, `defaultBot` (gitignored; copy from example) |
-| `.env/model.json` | API models array (gitignored) |
-| `.env/humpy.example.json` | template |
-| `.env/model.example.json` | template |
+| `.env/humpy.json` | global + per-bot settings (gitignored; copy from example) |
+| `.env/model.json` | API models + keys (gitignored) |
+| `.env.example/humpy.json` | template (no secrets) |
+| `.env.example/model.json` | template (`apiKey` placeholder) |
 
 ```bash
 cd D:\git\learningAgent
-copy .env\humpy.example.json .env\humpy.json
-copy .env\model.example.json .env\model.json
+mkdir .env 2>nul
+copy .env.example\humpy.json .env\humpy.json
+copy .env.example\model.json .env\model.json
+# edit .env\model.json and set your real apiKey
 
 python -m pip install -e .
 ```
@@ -38,8 +40,8 @@ Each **bot** is a folder under `.data/<botName>/`:
 ```text
 .data/main/
   prompt.json       # {"developer": "..."} — instructions for this bot
-  index.jsonl       # session catalog
-  sessions/*.jsonl  # user / assistant turns only
+  index.jsonl       # session catalog (turnCount per session)
+  sessions/*.jsonl  # user / assistant turns (saved after successful model reply)
 ```
 
 On first use, `prompt.json` is created from the default in [`humpy/prompt.py`](humpy/prompt.py). Package layout: [`humpy/README.md`](humpy/README.md).
@@ -61,4 +63,4 @@ python playground\hw\hwAgent.py
 python playground\chatloop\chatLoop.py
 ```
 
-Overrides: `LOCAL_MODEL_ID`, `HUMPY_SDK`, `HUMPY_BOT`, `CODEX_CWD`
+All runtime settings come from `.env/humpy.json` and `.env/model.json` (no env-var overrides).
