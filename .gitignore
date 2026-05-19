@@ -2,3 +2,6 @@
 .local.json
 .env/model.json
 .env/local.json
+.env/humpy.json
+.data/
+data/chatloop/

@@ -1,0 +1,2 @@
+[console_scripts]
+humpy = humpy.cli:main

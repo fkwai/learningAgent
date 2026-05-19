@@ -1,0 +1,81 @@
+Metadata-Version: 2.4
+Name: humpy
+Version: 0.1.0
+Summary: Humpy AI agent — personal assistant and coding expert (early core)
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: anthropic>=0.40.0
+Requires-Dist: openai>=1.0.0
+
+# learningAgent — Humpy dev home
+
+**Humpy** is an AI agent aimed at both personal assistant and coding expert work. This repo is where we build it.
+
+## Setup
+
+Config under `.env/`. Path resolution ([`humpy/__init__.py`](humpy/__init__.py)):
+
+| How you run | What happens |
+|-------------|----------------|
+| **Terminal** `cd D:\git\learningAgent` | cwd has `.env/` → repo = cwd |
+| **IDE / other cwd** | Walk parents for `.env/local.json` → use `repoPath` from JSON |
+
+| File | Purpose |
+|------|---------|
+| `.env/humpy.json` | `sdk`, `modelId`, `defaultBot` (gitignored; copy from example) |
+| `.env/model.json` | API models array (gitignored) |
+| `.env/local.json` | `{ "repoPath": "D:\\git\\learningAgent" }` (gitignored) |
+| `.env/humpy.example.json` | template |
+| `.env/model.example.json` | template |
+| `.env/local.example.json` | template |
+
+```bash
+cd D:\git\learningAgent
+copy .env\humpy.example.json .env\humpy.json
+copy .env\model.example.json .env\model.json
+copy .env\local.example.json .env\local.json
+
+python -m pip install -e .
+```
+
+## Run Humpy
+
+```bash
+humpy                    # pick bot, new or resume session, chat
+humpy --bot main --new
+humpy --bot main --resume 20260518-120000
+```
+
+`humpy.json` **sdk**: `anthropic` or `openai` (same model row in `model.json`, different baseUrl key).
+
+## Bots and memory
+
+Each **bot** is a folder under `.data/<botName>/`:
+
+```text
+.data/main/
+  prompt.json       # {"developer": "..."} — instructions for this bot
+  index.jsonl       # session catalog
+  sessions/*.jsonl  # user / assistant turns only
+```
+
+On first use, `prompt.json` is created from the default in [`humpy/prompt.py`](humpy/prompt.py).
+
+**Migration:** if you have old `.data/chatloop/`, move it to `.data/main/` (sessions + index.jsonl) and add `prompt.json`.
+
+Regression (real API):
+
+```bash
+python app/regressWorkoutWeek.py
+```
+
+Playground (optional):
+
+```bash
+python playground\hw\hwApiAnthropic.py
+python playground\hw\hwApiCodex.py
+python playground\hw\hwAgent.py
+python playground\chatloop\chatLoop.py
+```
+
+Overrides: `REPO_PATH`, `LOCAL_JSON`, `HUMPY_JSON`, `MODEL_JSON`, `LOCAL_MODEL_ID`, `HUMPY_SDK`, `HUMPY_BOT`, `CODEX_CWD`

@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "humpy"
+version = "0.1.0"
+description = "Humpy AI agent — personal assistant and coding expert (early core)"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "anthropic>=0.40.0",
+    "openai>=1.0.0",
+]
+
+[project.scripts]
+humpy = "humpy.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["humpy*"]
