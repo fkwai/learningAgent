@@ -2,6 +2,7 @@ import argparse
 from datetime import datetime
 
 from humpy.bot import Bot
+from humpy.commands import dispatch,isCommand
 from humpy.memory.store import loadIndexEntries
 from humpy.session import ChatSession
 from humpy.config import loadHumpyCfg
@@ -135,10 +136,17 @@ def cmdChat(args):
     sess=ChatSession(bot,sessionId=sessionId,resume=resume,pickId=args.model_id)
     mode='resume' if resume else 'new'
     titleHint=f" | {sess.headline}" if sess.headline else ''
-    print(f'humpy chat | bot {bot.name} | {mode} | session {sess.sessionId}{titleHint} | exit to quit')
+    listLimit=cfg.get('sessionsListLimit',cfg['sessionMenuLimit'])
+    print(f'humpy chat | bot {bot.name} | {mode} | session {sess.sessionId}{titleHint}')
+    print('message or /help')
     while True:
         userText=input('you> ').strip()
         if not userText:
+            continue
+        if isCommand(userText):
+            shouldExit,sess=dispatch(userText,sess,pickId=args.model_id,listLimit=listLimit)
+            if shouldExit:
+                break
             continue
         if userText.lower() in ('exit','quit'):
             break

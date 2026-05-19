@@ -10,6 +10,7 @@
   "autoTitle": true,
   "saveSessions": true,
   "sessionMenuLimit": 5,
+  "sessionsListLimit": 20,
   "primaryBotShow": 3,
   "othersBotLimit": 7,
   "bots": {

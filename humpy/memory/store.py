@@ -118,3 +118,49 @@ def updateSessionMeta(indexFile,sessionId,patch):
 
 def updateIndexHeadline(indexFile,sessionId,headline):
     updateSessionMeta(indexFile,sessionId,{'headline':headline})
+
+def listAllSessions(indexFile):
+    return _readIndexRows(indexFile)
+
+def sessionLastUpdated(sessionPath,fallback=''):
+    last=''
+    if not os.path.isfile(sessionPath):
+        return fallback or ''
+    with open(sessionPath,encoding='utf-8') as f:
+        for line in f:
+            line=line.strip()
+            if not line:
+                continue
+            row=json.loads(line)
+            if row.get('role') in ('user','assistant') and row.get('ts'):
+                last=row['ts']
+    return last or fallback or ''
+
+def exportSessionMarkdown(outPath,*,botName,sessionId,title,turnCount,sessionPath):
+    history,_=loadSessionHistory(sessionPath)
+    lines=[
+        f'# {title or "(untitled)"}',
+        '',
+        f'- bot: {botName}',
+        f'- sessionId: {sessionId}',
+        f'- turnCount: {turnCount}',
+        '',
+        '---',
+        '',
+    ]
+    for msg in history:
+        role=msg.get('role') or ''
+        if role not in ('user','assistant'):
+            continue
+        label='User' if role=='user' else 'Assistant'
+        lines.append(f'## {label}')
+        lines.append('')
+        lines.append(msg.get('content') or '')
+        lines.append('')
+    parent=os.path.dirname(os.path.abspath(outPath))
+    if parent:
+        os.makedirs(parent,exist_ok=True)
+    with open(outPath,'w',encoding='utf-8') as f:
+        f.write('\n'.join(lines))
+        if lines and lines[-1]:
+            f.write('\n')

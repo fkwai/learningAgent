@@ -84,4 +84,6 @@ humpy --bot main --new
 humpy --bot main --resume 20260518-120000
 ```
 
+Slash commands (not saved to history, no LLM): `/help`, `/exit`, `/status`, `/sessions`, `/load <id>`, `/reset`, `/export <path>`, `/title <text>`. See [`commands.py`](commands.py).
+
 Edit `.env/humpy.json` to change bots, limits, and defaults.
