@@ -1,0 +1,20 @@
+{
+  "_transport": "anthropic_messages_from_codex_shape",
+  "id": "065b269f1774c4b0e67f3264127cc610",
+  "model": "MiniMax-M2.7-highspeed",
+  "stop_reason": "tool_use",
+  "content_blocks": [],
+  "tool_uses": [
+    {
+      "id": "call_function_o10ilds06r97_1",
+      "name": "list_dir",
+      "input": {
+        "path": "."
+      }
+    }
+  ],
+  "usage": {
+    "input_tokens": 481,
+    "output_tokens": 56
+  }
+}

@@ -50,9 +50,9 @@ def _trimByTokenCap(messages,developer,userMessage,maxContextTokens):
         budget-=cost
     return trimmed
 
-def buildModelInput(*,developer,history,userMessage,humpyCfg):
-    maxRecent=humpyCfg['maxRecentTurns']
-    maxCtx=humpyCfg['maxContextTokens']
+def buildModelInput(*,developer,history,userMessage,botCfg):
+    maxRecent=botCfg['maxRecentTurns']
+    maxCtx=botCfg['maxContextTokens']
     pairs=_groupTurnPairs(history)
     if maxRecent and maxRecent>0:
         pairs=pairs[-maxRecent:]

@@ -4,49 +4,48 @@
 
 ## Setup
 
-Config under `.env/` at the repo root (parent of the `humpy` package). Paths come from [`humpy/hPath.py`](humpy/hPath.py) via `PKG_DIR = Path(__file__).resolve().parent` — same install location no matter what your cwd is.
+Config under `.env/` at the repo root. Paths come from [`humpy/hPath.py`](humpy/hPath.py) via `PKG_DIR` — same install location no matter what your cwd is.
 
 | File | Purpose |
 |------|---------|
-| `.env/humpy.json` | global + per-bot settings (gitignored; copy from example) |
+| `.env/humpy.json` | Agent settings + `defaultBotProfile` template (gitignored) |
 | `.env/model.json` | API models + keys (gitignored) |
-| `.env.example/humpy.json` | template (no secrets) |
-| `.env.example/model.json` | template (`apiKey` placeholder) |
+| `.env.example/humpy.json` | Agent template |
+| `.env.example/model.json` | Model template (`apiKey` placeholder) |
+| `.env.example/bot.json` | Per-bot template (copy into `.data/<bot>/bot.json` if needed) |
 
 ```bash
 cd D:\git\learningAgent
 mkdir .env 2>nul
 copy .env.example\humpy.json .env\humpy.json
 copy .env.example\model.json .env\model.json
-# edit .env\model.json and set your real apiKey
+# edit .env\model.json — set your real apiKey
 
 python -m pip install -e .
 ```
 
+Each bot under `.data/<name>/` has its own `bot.json` (created on first use from `defaultBotProfile`). Legacy `prompt.json` is migrated into `bot.json` automatically.
+
 ## Run Humpy
 
 ```bash
-humpy                    # pick bot, new or resume session, chat
+humpy
 humpy --bot main --new
 humpy --bot main --resume 20260518-120000
 ```
 
-`humpy.json` **sdk**: `anthropic` or `openai` (same model row in `model.json`, different baseUrl key).
+Bot `sdk` in `bot.json`: `anthropic` or `openai` (matching `baseUrl` in `model.json`).
 
 ## Bots and memory
 
-Each **bot** is a folder under `.data/<botName>/`:
-
 ```text
 .data/main/
-  prompt.json       # {"developer": "..."} — instructions for this bot
-  index.jsonl       # session catalog (turnCount per session)
-  sessions/*.jsonl  # user / assistant turns (saved after successful model reply)
+  bot.json          sdk, model, limits, developer prompt
+  index.jsonl       session catalog (turnCount)
+  sessions/*.jsonl  turns (saved after successful reply)
 ```
 
-On first use, `prompt.json` is created from the default in [`humpy/prompt.py`](humpy/prompt.py). Package layout: [`humpy/README.md`](humpy/README.md).
-
-**Migration:** if you have old `.data/chatloop/`, move it to `.data/main/` (sessions + index.jsonl) and add `prompt.json`.
+Package layout: [`humpy/README.md`](humpy/README.md).
 
 Regression (real API):
 
@@ -58,9 +57,5 @@ Playground (optional):
 
 ```bash
 python playground\hw\hwApiAnthropic.py
-python playground\hw\hwApiCodex.py
-python playground\hw\hwAgent.py
 python playground\chatloop\chatLoop.py
 ```
-
-All runtime settings come from `.env/humpy.json` and `.env/model.json` (no env-var overrides).

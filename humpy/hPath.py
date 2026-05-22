@@ -15,6 +15,9 @@ def getModelJsonPath():
 def getBotDir(botName):
     return str(ROOT_DIR/'.data'/botName)
 
+def getBotJsonPath(botName):
+    return str(Path(getBotDir(botName))/'bot.json')
+
 def getBotPromptPath(botName):
     return str(Path(getBotDir(botName))/'prompt.json')
 

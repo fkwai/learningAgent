@@ -4,8 +4,7 @@ from datetime import datetime
 from humpy.bot import Bot
 from humpy.commands import dispatch,isCommand
 from humpy.memory.store import loadIndexEntries
-from humpy.session import ChatSession
-from humpy.config import loadHumpyCfg
+from humpy.config import loadAgentCfg
 
 RESERVED_BOT_INPUT={'new','others'}
 
@@ -130,7 +129,8 @@ def pickSession(bot,argNew,argResume,menuLimit):
     return None,False
 
 def cmdChat(args):
-    cfg=loadHumpyCfg()
+    from humpy.session import ChatSession
+    cfg=loadAgentCfg()
     bot=pickBot(args.bot,cfg)
     sessionId,resume=pickSession(bot,args.new,args.resume,cfg['sessionMenuLimit'])
     sess=ChatSession(bot,sessionId=sessionId,resume=resume,pickId=args.model_id)
@@ -164,7 +164,7 @@ def main():
     parser.add_argument('--bot',default=None,help='bot name (.data/<bot>/)')
     parser.add_argument('--new',action='store_true',help='force new session')
     parser.add_argument('--resume',default=None,metavar='SESSION_ID',help='resume session id')
-    parser.add_argument('--model-id',default=None,help='override model id from humpy.json')
+    parser.add_argument('--model-id',default=None,help='override model id from bot.json')
     parser.add_argument('--max-tokens',type=int,default=None,help='override maxOutputTokens from config')
     args=parser.parse_args()
     if args.new and args.resume:

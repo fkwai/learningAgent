@@ -1,6 +1,3 @@
-from anthropic import Anthropic
-from openai import OpenAI
-
 def complete(modelCfg,sdk,messages,system,maxTokens=None,temperature=None):
     sdk=sdk.lower()
     if maxTokens is None:
@@ -10,6 +7,7 @@ def complete(modelCfg,sdk,messages,system,maxTokens=None,temperature=None):
     return _completeAnthropic(modelCfg,messages,system,maxTokens,temperature)
 
 def _completeAnthropic(modelCfg,messages,system,maxTokens,temperature):
+    from anthropic import Anthropic
     kwargs={
         'model':modelCfg.get('model'),
         'max_tokens':maxTokens,
@@ -33,6 +31,7 @@ def _completeAnthropic(modelCfg,messages,system,maxTokens,temperature):
     return {'text':'\n'.join(out).strip(),'usage':usage}
 
 def _completeOpenai(modelCfg,messages,system,maxTokens,temperature):
+    from openai import OpenAI
     client=OpenAI(
         api_key=modelCfg.get('apiKey'),
         base_url=modelCfg.get('baseUrl',{}).get('openai'),

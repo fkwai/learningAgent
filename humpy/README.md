@@ -8,62 +8,61 @@ Paths are anchored to the installed package (`PKG_DIR`), not the shell cwd. Repo
 
 ```text
 learningAgent/
-  .env/              humpy.json, model.json
-  .data/<bot>/       per-bot data (see bot.py)
+  .env/              humpy.json (agent), model.json (API keys)
+  .env.example/      templates without secrets
+  .data/<bot>/       bot.json, index.jsonl, sessions/
   humpy/             this package
     memory/
       store.py       jsonl + index persistence
       pick.py        latest-N context selection for the model
 ```
 
+## Config
+
+| File | Scope |
+|------|--------|
+| `.env/humpy.json` | Agent: `defaultBot`, menu limits (`primaryBotShow`, `othersBotLimit`, …), `defaultBotProfile` template for new bots |
+| `.data/<bot>/bot.json` | Bot: `sdk`, `model`, `temperature`, `maxOutputTokens`, memory limits, `developer`, `saveSessions`, title settings |
+| `.env/model.json` | API model rows (keys, baseUrl) |
+
+New bots: `Bot.ensure()` writes `bot.json` from `defaultBotProfile`. If legacy `prompt.json` exists, its `developer` field is copied into `bot.json` once.
+
 ## Modules
 
 | Module | Role |
 |--------|------|
-| `hPath.py` | Resolve `PKG_DIR`, repo root, `.env` config files, and `.data/<bot>/` paths |
-| `config.py` | Load `humpy.json` (global + per-bot settings) and `model.json` (API model rows) |
-| `bot.py` | `Bot` — list/adopt bots, paths, developer prompt from config or `prompt.json` |
-| `prompt.py` | Built-in developer and title prompts (fallback only) |
-| `memory/store.py` | Session jsonl and bot `index.jsonl`; `turnCount` in index metadata |
-| `memory/pick.py` | Build API-ready messages (latest `maxRecentTurns`, token cap estimate) |
-| `message.py` | LLM completion (Anthropic or OpenAI) |
-| `session.py` | `ChatSession` — one turn: pick → call → save on success |
-| `cli.py` | Interactive CLI (`humpy` entry point) |
+| `hPath.py` | Paths for `.env`, `.data/<bot>/` |
+| `config.py` | `loadAgentCfg()`, `loadBotCfg()`, `loadModel()` |
+| `bot.py` | `Bot` — list/adopt, seed/load `bot.json` |
+| `prompt.py` | Built-in fallbacks only (`DEV_PROMPT_DEFAULT`, `TITLE_PROMPT`) |
+| `memory/store.py` | Session jsonl and index; `turnCount` |
+| `memory/pick.py` | API-ready messages from `bot.json` limits |
+| `message.py` | LLM call (lazy-imports one SDK per `bot.json` `sdk`) |
+| `session.py` | `ChatSession` — pick → call → save on success |
+| `commands.py` | Slash commands (no LLM) |
+| `cli.py` | Interactive CLI |
 
-`__init__.py` is only a package marker. Import from the module that owns the behavior.
+## Startup
+
+`humpy` avoids importing `anthropic` / `openai` until the first model call. `ChatSession` is imported only when a chat session starts.
 
 ## Data flow (one turn)
 
 ```text
-cli.py
-  -> session.ChatSession.turn()
-       -> store.loadSessionHistory
-       -> pick.buildModelInput (developer + history + current user)
-       -> message.complete
-       on success (if saveSessions):
-         -> store.appendTurn (user + assistant pair)
-         -> store.updateSessionMeta (turnCount)
-       on failure:
-         -> no write (no orphan user line)
+cli → session.turn()
+  → store.loadSessionHistory
+  → pick.buildModelInput (botCfg)
+  → message.complete (lazy SDK import)
+  on success → store.appendTurn, update turnCount
 ```
-
-`turnCount` = completed assistant replies. Stored in `index.jsonl` per session; old sessions without it fall back to scanning jsonl once.
-
-## Config (`humpy.json`)
-
-Global fields: `defaultBot`, `maxRecentTurns`, `maxContextTokens`, `sessionTitleMaxChars`, `autoTitle`, `saveSessions`, `sessionMenuLimit`, `primaryBotShow`, `othersBotLimit`, `sdk`, `modelId`.
-
-Per-bot under `bots.<name>` (merged with `bots.default`): `promptFile`, `model`, `temperature`, `maxOutputTokens`.
-
-Config is loaded as-is from `.env/humpy.json` and `.env/model.json` (copy from `.env.example/`). API keys stay in `model.json` only.
 
 ## On disk (per bot)
 
 ```text
 .data/<botName>/
-  prompt.json           developer instructions (legacy / fallback)
-  index.jsonl           session catalog (includes turnCount)
-  sessions/<id>.jsonl   user / assistant turns
+  bot.json              bot settings + developer prompt
+  index.jsonl           session catalog (turnCount)
+  sessions/<id>.jsonl   turns
 ```
 
 ## Quick imports
@@ -71,9 +70,7 @@ Config is loaded as-is from `.env/humpy.json` and `.env/model.json` (copy from `
 ```python
 from humpy.session import ChatSession
 from humpy.bot import Bot
-from humpy.config import loadHumpyCfg, resolveBotSettings
-from humpy.memory.pick import buildModelInput
-from humpy.memory.store import loadIndexEntries
+from humpy.config import loadAgentCfg, loadBotCfg
 ```
 
 ## Run
@@ -81,9 +78,6 @@ from humpy.memory.store import loadIndexEntries
 ```bash
 humpy
 humpy --bot main --new
-humpy --bot main --resume 20260518-120000
 ```
 
-Slash commands (not saved to history, no LLM): `/help`, `/exit`, `/status`, `/sessions`, `/load <id>`, `/reset`, `/export <path>`, `/title <text>`. See [`commands.py`](commands.py).
-
-Edit `.env/humpy.json` to change bots, limits, and defaults.
+Slash commands: `/help`, `/exit`, `/status`, `/sessions`, `/load`, `/reset`, `/export`, `/title`.

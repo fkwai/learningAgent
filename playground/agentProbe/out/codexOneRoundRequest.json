@@ -1,0 +1,94 @@
+{
+  "_probe": "codex_responses_api_shape",
+  "_note": "Saved body matches Codex ResponsesApiRequest. HTTP call may translate to chat/tools for your SDK.",
+  "model": "MiniMax-M2.7-highspeed",
+  "instructions": "You are Codex, based on GPT-5. You are an interactive CLI agent that helps users with software engineering tasks. Use the provided tools to investigate and make progress. Prefer exploring the codebase before guessing. When you need filesystem access, call a tool instead of assuming file contents. Set workdir when running shell-like operations.",
+  "input": [
+    {
+      "type": "message",
+      "role": "user",
+      "content": [
+        {
+          "type": "input_text",
+          "text": "Read this repo and figure out what it is doing. Start by inspecting the project structure.\n\nRepository root (cwd): D:/git/learningAgent\nYou have not read any files yet. Start by listing or reading project files."
+        }
+      ]
+    }
+  ],
+  "tools": [
+    {
+      "type": "function",
+      "name": "list_dir",
+      "description": "List files and directories at a path. Use before reading unknown layouts.",
+      "strict": false,
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Directory path relative to repo root or absolute."
+          }
+        },
+        "required": [
+          "path"
+        ]
+      }
+    },
+    {
+      "type": "function",
+      "name": "read_file",
+      "description": "Read a text file from the repository.",
+      "strict": false,
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "File path."
+          },
+          "offset": {
+            "type": "integer",
+            "description": "1-based start line (optional)."
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Max lines to return (optional)."
+          }
+        },
+        "required": [
+          "path"
+        ]
+      }
+    },
+    {
+      "type": "function",
+      "name": "grep",
+      "description": "Search file contents for a pattern under a path.",
+      "strict": false,
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "pattern": {
+            "type": "string",
+            "description": "Regex or substring pattern."
+          },
+          "path": {
+            "type": "string",
+            "description": "File or directory to search."
+          }
+        },
+        "required": [
+          "pattern",
+          "path"
+        ]
+      }
+    }
+  ],
+  "tool_choice": "auto",
+  "parallel_tool_calls": false,
+  "stream": false,
+  "store": false,
+  "include": [],
+  "temperature": 0.7,
+  "max_output_tokens": 2000
+}

@@ -1,25 +1,21 @@
 {
-  "sdk": "anthropic",
-  "modelId": "minimax-m27-highspeed",
   "defaultBot": "main",
-  "maxRecentTurns": 20,
-  "maxContextTokens": 8000,
-  "sessionTitleMaxChars": 80,
-  "titleSnippetMaxChars": 500,
-  "titleMaxOutputTokens": 64,
-  "autoTitle": true,
-  "saveSessions": true,
   "sessionMenuLimit": 5,
   "sessionsListLimit": 20,
   "primaryBotShow": 3,
   "othersBotLimit": 7,
-  "bots": {
-    "default": {
-      "promptFile": "",
-      "model": "minimax-m27-highspeed",
-      "temperature": 0.7,
-      "maxOutputTokens": 2000
-    },
-    "main": {}
+  "defaultBotProfile": {
+    "sdk": "anthropic",
+    "model": "minimax-m27-highspeed",
+    "temperature": 0.7,
+    "maxOutputTokens": 2000,
+    "maxRecentTurns": 20,
+    "maxContextTokens": 8000,
+    "sessionTitleMaxChars": 80,
+    "titleSnippetMaxChars": 500,
+    "titleMaxOutputTokens": 64,
+    "autoTitle": true,
+    "saveSessions": true,
+    "developer": "Be concise and honest. Give short, direct answers unless the user asks for more detail. Say clearly when you are unsure or guessing. Do not invent facts, tools, or past actions. Avoid long markdown tables and filler unless the user asks."
   }
 }

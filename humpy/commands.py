@@ -1,7 +1,6 @@
 import shlex
 
 from humpy.memory import store
-from humpy.session import ChatSession
 
 def fmtTs(ts):
     s=(ts or '').strip()
@@ -34,8 +33,8 @@ def _cmdStatus(sess):
     print(f'title: {title}')
     print(f'turnCount: {sess.turnCount}')
     print(f'model: {sess.modelName} ({sess.pickId})')
-    print(f'maxRecentTurns: {sess.humpyCfg["maxRecentTurns"]}')
-    print(f'maxContextTokens: {sess.humpyCfg["maxContextTokens"]}')
+    print(f'maxRecentTurns: {sess.botCfg["maxRecentTurns"]}')
+    print(f'maxContextTokens: {sess.botCfg["maxContextTokens"]}')
 
 def _cmdSessions(sess,listLimit):
     rows=store.listAllSessions(sess.indexFile)
@@ -62,6 +61,7 @@ def _cmdLoad(sess,pickId,arg):
     if not meta:
         print(f'session not found: {arg}')
         return None,sess
+    from humpy.session import ChatSession
     try:
         newSess=ChatSession(sess.bot,sessionId=arg,resume=True,pickId=pickId)
     except SystemExit as exc:
@@ -73,6 +73,7 @@ def _cmdLoad(sess,pickId,arg):
     return None,newSess
 
 def _cmdReset(sess,pickId):
+    from humpy.session import ChatSession
     newSess=ChatSession(sess.bot,resume=False,pickId=pickId)
     print(f'new session {newSess.sessionId}')
     return None,newSess
@@ -97,9 +98,9 @@ def _cmdTitle(sess,arg):
     if not arg:
         print('usage: /title <text>')
         return None,sess
-    titleMax=sess.humpyCfg['sessionTitleMaxChars']
+    titleMax=sess.botCfg['sessionTitleMaxChars']
     title=arg.strip()[:titleMax]
-    if sess.humpyCfg['saveSessions']:
+    if sess.botCfg['saveSessions']:
         store.updateIndexHeadline(sess.indexFile,sess.sessionId,title)
     sess.headline=title
     sess.needsHeadline=False
