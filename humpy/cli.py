@@ -1,28 +1,12 @@
 import argparse
-from datetime import datetime
 
 from humpy.bot import Bot
 from humpy.commands import dispatch,isCommand
-from humpy.memory.store import loadIndexEntries
+from humpy.memory.store import loadIndexEntries,sessionTurnCount
 from humpy.config import loadAgentCfg
+from humpy.utils import fmtTs
 
 RESERVED_BOT_INPUT={'new','others'}
-
-def fmtTs(ts):
-    s=(ts or '').strip()
-    if not s:
-        return ''
-    try:
-        if s.endswith('Z'):
-            s=s[:-1]+'+00:00'
-        dt=datetime.fromisoformat(s)
-        return dt.strftime('%Y-%m-%dT%H:%M:%S')
-    except ValueError:
-        pass
-    base=s.split('+')[0].split('Z')[0]
-    if '.' in base:
-        base=base.split('.')[0]
-    return base[:19]
 
 def primaryBots(allBots,defaultBot,n):
     primary=[]
@@ -114,7 +98,9 @@ def pickSession(bot,argNew,argResume,menuLimit):
         hl=(e.get('headline') or '').strip() or '(untitled)'
         sid=e.get('sessionId') or ''
         ts=fmtTs(e.get('createdAt'))
-        print(f'{i}. {hl} | {sid} | {ts}')
+        sp=e.get('sessionFile') or ''
+        tc=sessionTurnCount(sp) if sp else e.get('turnCount',0)
+        print(f'{i}. {hl} | {sid} | turns {tc} | {ts}')
     maxPick=len(entries)
     pick=input(f'pick 0-{maxPick}> ').strip()
     if pick in ('','0'):

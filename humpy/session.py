@@ -1,11 +1,11 @@
 import os
-from datetime import datetime,timezone
 
 from humpy.bot import Bot
 from humpy.config import loadModel,resolveBotSettings
 from humpy.memory import pick,store
 from humpy.message import complete
-from humpy.prompt import DEV_PROMPT_DEFAULT,TITLE_PROMPT
+from humpy.prompt import DEV_PROMPT_DEFAULT
+from humpy.utils import newSessionId
 
 class ChatSession:
     def __init__(self,bot,sessionId=None,resume=False,headline='',pickId=None,prefix=''):
@@ -31,8 +31,7 @@ class ChatSession:
         if sessionId:
             sid=sessionId
         else:
-            stamp=datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')
-            sid=(prefix+stamp) if prefix else stamp
+            sid=newSessionId(prefix)
         self.sessionId=sid
         self.sessionPath=os.path.join(bot.sessionsDir,sid+'.jsonl')
         self.headline=headline
@@ -42,10 +41,7 @@ class ChatSession:
             if not exists:
                 raise SystemExit(f'session not found: {self.sessionPath}')
             meta=store.getSessionMeta(self.indexFile,sid)
-            if meta is not None and 'turnCount' in meta:
-                self.turnCount=int(meta['turnCount'])
-            else:
-                self.turnCount=store.maxTurnInSession(self.sessionPath)
+            self.turnCount=store.sessionTurnCount(self.sessionPath)
             if meta and (meta.get('headline') or '').strip():
                 self.headline=(meta.get('headline') or '').strip()
                 self.needsHeadline=False
@@ -65,30 +61,16 @@ class ChatSession:
                     'model':self.modelName,
                     'headline':headline,
                     'createdAt':store.nowIso(),
-                    'turnCount':0,
                 })
             self.turnCount=0
             self.needsHeadline=self.botCfg['autoTitle'] and not (headline or '').strip()
 
-    def maybeSummarizeHeadline(self,userText,assistantText):
+    def applyAutoTitle(self,userText):
         if not self.needsHeadline:
             return None
         self.needsHeadline=False
-        snippet=(assistantText or '')[:self.botCfg['titleSnippetMaxChars']]
-        prompt=f'User: {userText}\nAssistant: {snippet}'
-        result=complete(
-            self.cfg,
-            self.sdk,
-            [{'role':'user','content':prompt}],
-            TITLE_PROMPT,
-            maxTokens=self.botCfg['titleMaxOutputTokens'],
-            temperature=self.botCfg['temperature'],
-        )
-        title=(result.get('text') or '').strip().split('\n')[0].strip()
         titleMax=self.botCfg['sessionTitleMaxChars']
-        if not title:
-            title=(userText or '').strip()[:titleMax] or self.sessionId
-        title=title[:titleMax]
+        title=(userText or '').strip()[:titleMax] or self.sessionId
         if self.botCfg['saveSessions']:
             store.updateIndexHeadline(self.indexFile,self.sessionId,title)
         self.headline=title
@@ -127,10 +109,9 @@ class ChatSession:
                 self.modelName,
                 usage=result.get('usage'),
             )
-            store.updateSessionMeta(self.indexFile,self.sessionId,{'turnCount':nextTurn})
             self.turnCount=nextTurn
             if self.botCfg['autoTitle'] and self.turnCount==1:
-                newHeadline=self.maybeSummarizeHeadline(userText,result['text'])
+                newHeadline=self.applyAutoTitle(userText)
         else:
             self.turnCount+=1
         return {

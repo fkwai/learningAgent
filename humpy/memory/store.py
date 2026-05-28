@@ -50,6 +50,10 @@ def maxTurnInSession(sessionPath):
                 mx=t
     return mx
 
+def sessionTurnCount(sessionPath):
+    '''Turn count from session jsonl only (index is not updated per turn).'''
+    return maxTurnInSession(sessionPath)
+
 def appendTurn(sessionPath,turnNum,user,assistant,model,usage=None,ts=None):
     t=ts or nowIso()
     appendLine(sessionPath,{'role':'user','turn':turnNum,'content':user,'ts':t})

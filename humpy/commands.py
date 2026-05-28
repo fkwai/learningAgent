@@ -1,17 +1,7 @@
 import shlex
 
 from humpy.memory import store
-
-def fmtTs(ts):
-    s=(ts or '').strip()
-    if not s:
-        return ''
-    if 'T' in s:
-        base=s.split('+')[0].split('Z')[0]
-        if '.' in base:
-            base=base.split('.')[0]
-        return base[:19]
-    return s[:19]
+from humpy.utils import fmtTs
 
 def _helpText():
     return '\n'.join([
@@ -45,11 +35,8 @@ def _cmdSessions(sess,listLimit):
     for row in rows:
         sid=row.get('sessionId') or ''
         title=(row.get('headline') or '').strip() or '(untitled)'
-        tc=row.get('turnCount')
-        if tc is None:
-            sp=row.get('sessionFile') or ''
-            tc=store.maxTurnInSession(sp) if sp else 0
         sp=row.get('sessionFile') or ''
+        tc=store.sessionTurnCount(sp) if sp else 0
         updated=fmtTs(store.sessionLastUpdated(sp,row.get('createdAt','')))
         print(f'{sid} | {title} | turns {tc} | {updated}')
 

@@ -8,11 +8,10 @@ Config under `.env/` at the repo root. Paths come from [`humpy/hPath.py`](humpy/
 
 | File | Purpose |
 |------|---------|
-| `.env/humpy.json` | Agent settings + `defaultBotProfile` template (gitignored) |
+| `.env/humpy.json` | Agent settings + **`defaultBotProfile`** (template for new bots; gitignored) |
 | `.env/model.json` | API models + keys (gitignored) |
-| `.env.example/humpy.json` | Agent template |
-| `.env.example/model.json` | Model template (`apiKey` placeholder) |
-| `.env.example/bot.json` | Per-bot template (copy into `.data/<bot>/bot.json` if needed) |
+| `.env.example/humpy.json` | Copy template only — **not read at runtime** |
+| `.env.example/model.json` | Copy template only (`apiKey` placeholder) |
 
 ```bash
 cd D:\git\learningAgent
@@ -20,18 +19,21 @@ mkdir .env 2>nul
 copy .env.example\humpy.json .env\humpy.json
 copy .env.example\model.json .env\model.json
 # edit .env\model.json — set your real apiKey
+# optional: edit defaultBotProfile inside .env\humpy.json
 
 python -m pip install -e .
 ```
 
-Each bot under `.data/<name>/` has its own `bot.json` (created on first use from `defaultBotProfile`). Legacy `prompt.json` is migrated into `bot.json` automatically.
+**Runtime reads only `.env/` and `.data/`** — never `.env.example/`.
+
+On first use of a bot, `Bot.ensure()` copies `defaultBotProfile` from `.env/humpy.json` into `.data/<name>/bot.json`. Legacy `prompt.json` `developer` is merged in once if present.
 
 ## Run Humpy
 
 ```bash
 humpy
 humpy --bot main --new
-humpy --bot main --resume 20260518-120000
+humpy --bot main --resume 2605181200-a3f2
 ```
 
 Bot `sdk` in `bot.json`: `anthropic` or `openai` (matching `baseUrl` in `model.json`).
@@ -41,7 +43,7 @@ Bot `sdk` in `bot.json`: `anthropic` or `openai` (matching `baseUrl` in `model.j
 ```text
 .data/main/
   bot.json          sdk, model, limits, developer prompt
-  index.jsonl       session catalog (turnCount)
+  index.jsonl       session catalog (headline, metadata)
   sessions/*.jsonl  turns (saved after successful reply)
 ```
 
