@@ -5,3 +5,5 @@ data/chatloop/
 *__pycache__*
 *.code-workspace
 *.egg-info*
+.git
+*.bundle
