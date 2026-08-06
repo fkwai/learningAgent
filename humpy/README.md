@@ -1,6 +1,6 @@
 # Humpy package
 
-Core library for the Humpy CLI agent. Repo-level setup and run instructions live in the [root README](../README.md).
+Core library for the Humpy CLI agent — the **thinking / API-LLM** side of the office. Repo vision (Humpy vs Benerd) and setup live in the [root README](../README.md). **Focus now: Humpy only**; tools stay in this package.
 
 ## Layout
 
@@ -15,6 +15,11 @@ learningAgent/
     memory/
       store.py       jsonl + index persistence
       pick.py        latest-N context selection for the model
+    tools/
+      listDir.py     list_dir
+      readFile.py    read_file
+      shell.py       shell (CLI wrapper)
+      __init__.py    schema() + run(name, arg)
 ```
 
 ## Config
@@ -40,6 +45,7 @@ There is **no** `bot.json` under `.env/`. The default bot shape lives only as `d
 | `memory/pick.py` | API-ready messages from `bot.json` limits |
 | `message.py` | LLM call (lazy-imports one SDK per `bot.json` `sdk`) |
 | `session.py` | `ChatSession` — pick → call → save on success |
+| `tools/` | Tool schema + `run()` (`list_dir`, `read_file`, `shell`); not yet wired into `session.turn` |
 | `commands.py` | Slash commands (no LLM) |
 | `cli.py` | Interactive CLI |
 

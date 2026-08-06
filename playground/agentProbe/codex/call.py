@@ -11,11 +11,11 @@ from http_call import executeOneRound as _executeOneRound
 
 def runCodexModelCall(*,modelRow,openaiMessages,messages,system,tools,maxOutputTokens,temperature):
     sdk=modelRow['sdk'].lower()
-    apiMessages=openaiMessages if sdk=='openai' else messages
+    apiMessage=openaiMessages if sdk=='openai' else messages
     return _executeOneRound(
         sdk=modelRow['sdk'],
         modelRow=modelRow,
-        messages=apiMessages,
+        messages=apiMessage,
         system=system,
         tools=tools,
         toolShape='flat',

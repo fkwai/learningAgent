@@ -1,3 +1,3 @@
-from humpy.memory.store import loadIndexEntries
+from humpy.memory.store import loadIndexEntry
 
-__all__=['loadIndexEntries']
+__all__=['loadIndexEntry']

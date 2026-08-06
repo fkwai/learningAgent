@@ -18,7 +18,7 @@ print('regress workout week | bot',botName,'|',sess.sessionId,'\n')
 for day in days:
     userText=f'What is the workout plan for {day}?'
     print('user>',userText)
-    out=sess.turn(userText,maxTokens=args.max_tokens)
+    out=sess.turn(userText,maxToken=args.max_tokens)
     print('assistant>',out['text'])
     if out.get('usage'):
         print('  tokens:',out['usage'])

@@ -12,7 +12,7 @@ def appendLine(path,obj):
 def loadSessionHistory(sessionPath):
     if not os.path.isfile(sessionPath):
         return [],None
-    devParts=[]
+    devPart=[]
     out=[]
     with open(sessionPath,encoding='utf-8') as f:
         for line in f:
@@ -24,7 +24,7 @@ def loadSessionHistory(sessionPath):
                 continue
             role=row.get('role')
             if role=='developer':
-                devParts.append(row.get('content') or '')
+                devPart.append(row.get('content') or '')
                 continue
             if role in ('user','assistant'):
                 out.append({
@@ -32,7 +32,7 @@ def loadSessionHistory(sessionPath):
                     'content':row.get('content') or '',
                     'turn':row.get('turn'),
                 })
-    devFromFile='\n\n'.join(p for p in devParts if p).strip() or None
+    devFromFile='\n\n'.join(p for p in devPart if p).strip() or None
     return out,devFromFile
 
 def maxTurnInSession(sessionPath):
@@ -75,56 +75,56 @@ def indexHasSession(indexFile,sid):
 def registerSession(indexFile,meta):
     appendLine(indexFile,meta)
 
-def loadIndexEntries(indexFile,limit=20):
+def loadIndexEntry(indexFile,limit=20):
     if not os.path.isfile(indexFile):
         return []
-    rows=[]
+    row=[]
     with open(indexFile,encoding='utf-8') as f:
         for line in f:
             line=line.strip()
             if line:
-                rows.append(json.loads(line))
-    return rows[-limit:]
+                row.append(json.loads(line))
+    return row[-limit:]
 
-def _readIndexRows(indexFile):
+def _readIndexRow(indexFile):
     if not os.path.isfile(indexFile):
         return []
-    rows=[]
+    row=[]
     with open(indexFile,encoding='utf-8') as f:
         for line in f:
             line=line.strip()
             if line:
-                rows.append(json.loads(line))
-    return rows
+                row.append(json.loads(line))
+    return row
 
 def getSessionMeta(indexFile,sessionId):
-    for row in _readIndexRows(indexFile):
-        if row.get('sessionId')==sessionId:
-            return row
+    for r in _readIndexRow(indexFile):
+        if r.get('sessionId')==sessionId:
+            return r
     return None
 
 def updateSessionMeta(indexFile,sessionId,patch):
     if not patch:
         return
-    rows=_readIndexRows(indexFile)
-    if not rows:
+    row=_readIndexRow(indexFile)
+    if not row:
         return
     found=False
-    for row in rows:
-        if row.get('sessionId')==sessionId:
-            row.update(patch)
+    for r in row:
+        if r.get('sessionId')==sessionId:
+            r.update(patch)
             found=True
     if not found:
         return
     with open(indexFile,'w',encoding='utf-8') as f:
-        for row in rows:
-            f.write(json.dumps(row,ensure_ascii=False)+'\n')
+        for r in row:
+            f.write(json.dumps(r,ensure_ascii=False)+'\n')
 
 def updateIndexHeadline(indexFile,sessionId,headline):
     updateSessionMeta(indexFile,sessionId,{'headline':headline})
 
-def listAllSessions(indexFile):
-    return _readIndexRows(indexFile)
+def listAllSession(indexFile):
+    return _readIndexRow(indexFile)
 
 def sessionLastUpdated(sessionPath,fallback=''):
     last=''
@@ -135,14 +135,14 @@ def sessionLastUpdated(sessionPath,fallback=''):
             line=line.strip()
             if not line:
                 continue
-            row=json.loads(line)
-            if row.get('role') in ('user','assistant') and row.get('ts'):
-                last=row['ts']
+            r=json.loads(line)
+            if r.get('role') in ('user','assistant') and r.get('ts'):
+                last=r['ts']
     return last or fallback or ''
 
 def exportSessionMarkdown(outPath,*,botName,sessionId,title,turnCount,sessionPath):
     history,_=loadSessionHistory(sessionPath)
-    lines=[
+    line=[
         f'# {title or "(untitled)"}',
         '',
         f'- bot: {botName}',
@@ -157,14 +157,14 @@ def exportSessionMarkdown(outPath,*,botName,sessionId,title,turnCount,sessionPat
         if role not in ('user','assistant'):
             continue
         label='User' if role=='user' else 'Assistant'
-        lines.append(f'## {label}')
-        lines.append('')
-        lines.append(msg.get('content') or '')
-        lines.append('')
+        line.append(f'## {label}')
+        line.append('')
+        line.append(msg.get('content') or '')
+        line.append('')
     parent=os.path.dirname(os.path.abspath(outPath))
     if parent:
         os.makedirs(parent,exist_ok=True)
     with open(outPath,'w',encoding='utf-8') as f:
-        f.write('\n'.join(lines))
-        if lines and lines[-1]:
+        f.write('\n'.join(line))
+        if line and line[-1]:
             f.write('\n')

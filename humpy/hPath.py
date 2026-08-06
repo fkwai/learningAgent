@@ -21,7 +21,7 @@ def getBotJsonPath(botName):
 def getBotPromptPath(botName):
     return str(Path(getBotDir(botName))/'prompt.json')
 
-def getBotSessionsDir(botName):
+def getBotSessionDir(botName):
     return str(Path(getBotDir(botName))/'sessions')
 
 def getBotIndexFile(botName):

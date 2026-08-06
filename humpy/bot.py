@@ -3,7 +3,7 @@ import json
 import os
 
 from humpy.config import defaultBotProfile,loadAgentCfg,loadBotCfg
-from humpy.hPath import getBotDir,getBotIndexFile,getBotJsonPath,getBotPromptPath,getBotSessionsDir,getDataDir
+from humpy.hPath import getBotDir,getBotIndexFile,getBotJsonPath,getBotPromptPath,getBotSessionDir,getDataDir
 from humpy.prompt import DEV_PROMPT_DEFAULT
 
 class Bot:
@@ -38,7 +38,7 @@ class Bot:
         return out
 
     @classmethod
-    def listNames(cls):
+    def listName(cls):
         return [b.name for b in cls.list()]
 
     @classmethod
@@ -59,8 +59,8 @@ class Bot:
         return getBotJsonPath(self.name)
 
     @property
-    def sessionsDir(self):
-        return getBotSessionsDir(self.name)
+    def sessionDir(self):
+        return getBotSessionDir(self.name)
 
     @property
     def indexFile(self):
@@ -100,7 +100,7 @@ class Bot:
         self._writeBotJson(cfg)
 
     def ensure(self):
-        os.makedirs(self.sessionsDir,exist_ok=True)
+        os.makedirs(self.sessionDir,exist_ok=True)
         if not os.path.isfile(self.botJsonPath):
             self._seedBotJson()
 

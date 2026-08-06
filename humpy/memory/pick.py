@@ -1,11 +1,11 @@
-def _estTokens(text):
+def _estToken(text):
     return max(1,len(text or '')//4)
 
-def _msgTokens(msg):
-    return _estTokens(msg.get('content') or '')
+def _msgToken(msg):
+    return _estToken(msg.get('content') or '')
 
-def _groupTurnPairs(history):
-    pairs=[]
+def _groupTurnPair(history):
+    pair=[]
     i=0
     n=len(history)
     while i<n:
@@ -25,25 +25,25 @@ def _groupTurnPairs(history):
         else:
             i+=1
         if assistant is not None:
-            pairs.append((user,assistant))
-    return pairs
+            pair.append((user,assistant))
+    return pair
 
-def _pairsToMessages(pairs):
+def _pairToMessage(pair):
     out=[]
-    for user,assistant in pairs:
+    for user,assistant in pair:
         out.append({'role':'user','content':user.get('content') or ''})
         out.append({'role':'assistant','content':assistant.get('content') or ''})
     return out
 
-def _trimByTokenCap(messages,developer,userMessage,maxContextTokens):
-    if not maxContextTokens or maxContextTokens<=0:
-        return messages
-    budget=maxContextTokens
-    budget-= _estTokens(developer)
-    budget-= _estTokens(userMessage)
+def _trimByTokenCap(message,developer,userMessage,maxContextToken):
+    if not maxContextToken or maxContextToken<=0:
+        return message
+    budget=maxContextToken
+    budget-=_estToken(developer)
+    budget-=_estToken(userMessage)
     trimmed=[]
-    for msg in reversed(messages):
-        cost=_msgTokens(msg)
+    for msg in reversed(message):
+        cost=_msgToken(msg)
         if trimmed and budget-cost<0:
             break
         trimmed.insert(0,msg)
@@ -53,10 +53,10 @@ def _trimByTokenCap(messages,developer,userMessage,maxContextTokens):
 def buildModelInput(*,developer,history,userMessage,botCfg):
     maxRecent=botCfg['maxRecentTurns']
     maxCtx=botCfg['maxContextTokens']
-    pairs=_groupTurnPairs(history)
+    pair=_groupTurnPair(history)
     if maxRecent and maxRecent>0:
-        pairs=pairs[-maxRecent:]
-    messages=_pairsToMessages(pairs)
-    messages=_trimByTokenCap(messages,developer,userMessage,maxCtx)
-    messages.append({'role':'user','content':userMessage})
-    return {'system':developer or '','messages':messages}
+        pair=pair[-maxRecent:]
+    message=_pairToMessage(pair)
+    message=_trimByTokenCap(message,developer,userMessage,maxCtx)
+    message.append({'role':'user','content':userMessage})
+    return {'system':developer or '','messages':message}

@@ -1,6 +1,18 @@
-# learningAgent — Humpy dev home
+# learningAgent — Humpy (and later Benerd)
 
-**Humpy** is an AI agent aimed at both personal assistant and coding expert work. This repo is where we build it.
+This repo is an **office**: two agents that work together, like *Yes Minister*.
+
+| | **Humpy** | **Benerd** |
+|--|-----------|------------|
+| Role | Think, decide, instruct | Do long, boring, many-iteration work |
+| Model | Big LLM via API | Small LLM on local GPU |
+| Examples | Plan, review, talk to you, delegate | Hunt memory, summarize huge texts, draft tools |
+
+**Right now we only build Humpy.** Benerd is a placeholder (`benerd/`); shared “office” packaging can wait until Humpy’s tool loop is solid. Tools live under **`humpy/tools/`** for now.
+
+Learning roadmap for the agent loop: [`tutorial.md`](tutorial.md). Package detail: [`humpy/README.md`](humpy/README.md).
+
+---
 
 ## Setup
 
@@ -47,17 +59,25 @@ Bot `sdk` in `bot.json`: `anthropic` or `openai` (matching `baseUrl` in `model.j
   sessions/*.jsonl  turns (saved after successful reply)
 ```
 
-Package layout: [`humpy/README.md`](humpy/README.md).
+## Tools (Humpy for now)
 
-Regression (real API):
+```text
+humpy/tools/
+  __init__.py     schema() + run(name, arg)
+  listDir.py
+  readFile.py
+  shell.py        CLI wrapper — command / cwd / timeout_ms
+```
+
+Playground probe (LLM calls tool → execute):
+
+```bash
+python playground/tool/test.py
+```
+
+## More
 
 ```bash
 python app/regressWorkoutWeek.py
-```
-
-Playground (optional):
-
-```bash
-python playground\hw\hwApiAnthropic.py
-python playground\chatloop\chatLoop.py
+python playground/chatloop/chatLoop.py
 ```

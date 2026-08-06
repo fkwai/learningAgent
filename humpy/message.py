@@ -1,26 +1,26 @@
-def complete(modelCfg,sdk,messages,system,maxTokens=None,temperature=None):
+def complete(modelCfg,sdk,message,system,maxToken=None,temperature=None):
     sdk=sdk.lower()
-    if maxTokens is None:
-        maxTokens=1024
+    if maxToken is None:
+        maxToken=1024
     if sdk=='openai':
-        return _completeOpenai(modelCfg,messages,system,maxTokens,temperature)
-    return _completeAnthropic(modelCfg,messages,system,maxTokens,temperature)
+        return _completeOpenai(modelCfg,message,system,maxToken,temperature)
+    return _completeAnthropic(modelCfg,message,system,maxToken,temperature)
 
-def _completeAnthropic(modelCfg,messages,system,maxTokens,temperature):
+def _completeAnthropic(modelCfg,message,system,maxToken,temperature):
     from anthropic import Anthropic
-    kwargs={
+    kwarg={
         'model':modelCfg.get('model'),
-        'max_tokens':maxTokens,
+        'max_tokens':maxToken,
         'system':system,
-        'messages':messages,
+        'messages':message,
     }
     if temperature is not None:
-        kwargs['temperature']=temperature
+        kwarg['temperature']=temperature
     client=Anthropic(
         api_key=modelCfg.get('apiKey'),
         base_url=modelCfg.get('baseUrl',{}).get('anthropic'),
     )
-    resp=client.messages.create(**kwargs)
+    resp=client.messages.create(**kwarg)
     usage=None
     if resp.usage:
         usage={'prompt':resp.usage.input_tokens,'completion':resp.usage.output_tokens}
@@ -30,22 +30,22 @@ def _completeAnthropic(modelCfg,messages,system,maxTokens,temperature):
             out.append(block.text)
     return {'text':'\n'.join(out).strip(),'usage':usage}
 
-def _completeOpenai(modelCfg,messages,system,maxTokens,temperature):
+def _completeOpenai(modelCfg,message,system,maxToken,temperature):
     from openai import OpenAI
     client=OpenAI(
         api_key=modelCfg.get('apiKey'),
         base_url=modelCfg.get('baseUrl',{}).get('openai'),
     )
-    apiMessages=[{'role':'system','content':system}]
-    apiMessages.extend(messages)
-    kwargs={
+    apiMessage=[{'role':'system','content':system}]
+    apiMessage.extend(message)
+    kwarg={
         'model':modelCfg.get('model'),
-        'max_tokens':maxTokens,
-        'messages':apiMessages,
+        'max_tokens':maxToken,
+        'messages':apiMessage,
     }
     if temperature is not None:
-        kwargs['temperature']=temperature
-    resp=client.chat.completions.create(**kwargs)
+        kwarg['temperature']=temperature
+    resp=client.chat.completions.create(**kwarg)
     usage=None
     if resp.usage:
         usage={'prompt':resp.usage.prompt_tokens,'completion':resp.usage.completion_tokens}

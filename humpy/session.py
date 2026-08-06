@@ -33,7 +33,7 @@ class ChatSession:
         else:
             sid=newSessionId(prefix)
         self.sessionId=sid
-        self.sessionPath=os.path.join(bot.sessionsDir,sid+'.jsonl')
+        self.sessionPath=os.path.join(bot.sessionDir,sid+'.jsonl')
         self.headline=headline
         self.needsHeadline=False
         exists=os.path.isfile(self.sessionPath)
@@ -76,9 +76,9 @@ class ChatSession:
         self.headline=title
         return title
 
-    def turn(self,userText,maxTokens=None):
-        if maxTokens is None:
-            maxTokens=self.botCfg['maxOutputTokens']
+    def turn(self,userText,maxToken=None):
+        if maxToken is None:
+            maxToken=self.botCfg['maxOutputTokens']
         history,devFromFile=store.loadSessionHistory(self.sessionPath)
         developer=devFromFile or self.bot.loadDeveloper() or DEV_PROMPT_DEFAULT
         picked=pick.buildModelInput(
@@ -93,7 +93,7 @@ class ChatSession:
                 self.sdk,
                 picked['messages'],
                 picked['system'],
-                maxTokens=maxTokens,
+                maxToken=maxToken,
                 temperature=self.botCfg['temperature'],
             )
         except Exception as exc:
