@@ -1,8 +1,8 @@
 # quick summary
 
-Humpy is a small Python chat kernel. One user message → one llm reply, saved to jsonl.
+Humpy chat kernel with a ReAct tool loop: one user message → model may call tools → observations → final text, saved to jsonl.
 
-Three steps, three modules: **bot** → **session** → **message**. `cli.py` runs the REPL. No tools, no agent loop yet.
+Core path: **bot** → **session** → **react** → **message** + **tools**. `cli.py` runs the REPL.
 
 ---
 
@@ -26,22 +26,30 @@ module: `session.py` — one conversation thread + turn orchestration
 3. one exchange — `session.turn(userText)`:
    - `store.loadSessionHistory()`
    - `pick.buildModelInput()` — trim history
-   - call **step 3** `message.complete()`
-   - `store.appendTurn()` on success
+   - `react.run()` — tool loop (see step 3–4)
+   - `store.appendTurn()` on success (final text only)
 
 cli: `cli.pickBot()` / `cli.pickSession()`, or `--bot`, `--new`, `--resume`. slash cmds in `commands.py`.
 
 ## step 3 — call the model (`message.py`)
 
-module: `message.py` — single llm round-trip (text only)
+module: `message.py` — one llm round-trip (optional tools)
 
-1. route by sdk — `message.complete()` reads `bot.json` `sdk`
-2. anthropic — `message._completeAnthropic()` → `messages.create`
-3. openai — `message._completeOpenai()` → `chat.completions.create`
-4. return — `{ text, usage }` back to `session.turn()`
+1. `message.complete(..., toolLst=...)` — openai or anthropic
+2. returns `{ text, usage, toolCall }` (normalized)
+3. `message.appendToolRound()` — splice assistant + tool observations into `message` for the next round
 
-model row from `config.loadModel()` + `.env/model.json`. sdk imported lazily on first call.
+## step 4 — ReAct + tools (`react.py`, `tools/`)
+
+module: `react.py` — loop until no `toolCall` or `maxAgentRound` (default 6)
+
+1. `complete` with `humpy.tools.schema()`
+2. for each call — `tools.run(name, arg, repoRoot=ROOT_DIR)`
+3. `appendToolRound` → next `complete`
+4. return final `{ text, usage, round }`
+
+tools: `list_dir`, `read_file`, `shell` under `humpy/tools/`.
 
 ---
 
-not built: agent loop (observation → second call), streaming, skills, benerd. tools: `humpy/tools/` + `playground/tool/test.py`
+not built: tool traces in session jsonl, shell allowlists, streaming, skills, benerd.

@@ -16,6 +16,7 @@
     "titleMaxOutputTokens": 64,
     "autoTitle": true,
     "saveSessions": true,
+    "maxAgentRound": 6,
     "developer": "Be concise and honest. Give short, direct answers unless the user asks for more detail. Say clearly when you are unsure or guessing. Do not invent facts, tools, or past actions. Avoid long markdown tables and filler unless the user asks."
   }
 }

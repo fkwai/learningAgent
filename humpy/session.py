@@ -2,8 +2,10 @@ import os
 
 from humpy.bot import Bot
 from humpy.config import loadModel,resolveBotSettings
+from humpy.hPath import ROOT_DIR
 from humpy.memory import pick,store
-from humpy.message import complete
+from humpy import react
+from humpy import tools as humpyTools
 from humpy.prompt import DEV_PROMPT_DEFAULT
 from humpy.utils import newSessionId
 
@@ -88,11 +90,14 @@ class ChatSession:
             botCfg=self.botCfg,
         )
         try:
-            result=complete(
+            result=react.run(
                 self.cfg,
                 self.sdk,
-                picked['messages'],
                 picked['system'],
+                list(picked['messages']),
+                toolLst=humpyTools.schema(),
+                repoRoot=str(ROOT_DIR),
+                maxRound=self.botCfg.get('maxAgentRound',6),
                 maxToken=maxToken,
                 temperature=self.botCfg['temperature'],
             )
@@ -117,6 +122,7 @@ class ChatSession:
         return {
             'text':result['text'],
             'usage':result.get('usage'),
+            'round':result.get('round'),
             'turn':self.turnCount,
             'sessionId':self.sessionId,
             'sessionPath':self.sessionPath,
