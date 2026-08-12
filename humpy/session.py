@@ -30,10 +30,7 @@ class ChatSession:
         self.pickId=modelRow.get('id')
         self.modelName=modelRow.get('model')
         self.indexFile=bot.indexFile
-        if sessionId:
-            sid=sessionId
-        else:
-            sid=newSessionId(prefix)
+        sid=sessionId or newSessionId(prefix)
         self.sessionId=sid
         self.sessionPath=os.path.join(bot.sessionDir,sid+'.jsonl')
         self.headline=headline
@@ -46,7 +43,6 @@ class ChatSession:
             self.turnCount=store.sessionTurnCount(self.sessionPath)
             if meta and (meta.get('headline') or '').strip():
                 self.headline=(meta.get('headline') or '').strip()
-                self.needsHeadline=False
             else:
                 self.needsHeadline=self.botCfg['autoTitle']
         else:
@@ -56,13 +52,8 @@ class ChatSession:
                 open(self.sessionPath,'a',encoding='utf-8').close()
             if not store.indexHasSession(self.indexFile,sid):
                 store.registerSession(self.indexFile,{
-                    'sessionId':sid,
-                    'botName':bot.name,
-                    'sessionFile':self.sessionPath.replace('\\','/'),
-                    'modelId':self.pickId,
-                    'model':self.modelName,
-                    'headline':headline,
-                    'createdAt':store.nowIso(),
+                    'sessionId':sid,'botName':bot.name,'sessionFile':self.sessionPath.replace('\\','/'),
+                    'modelId':self.pickId,'model':self.modelName,'headline':headline,'createdAt':store.nowIso(),
                 })
             self.turnCount=0
             self.needsHeadline=self.botCfg['autoTitle'] and not (headline or '').strip()
@@ -83,49 +74,44 @@ class ChatSession:
             maxToken=self.botCfg['maxOutputTokens']
         history,devFromFile=store.loadSessionHistory(self.sessionPath)
         developer=devFromFile or self.bot.loadDeveloper() or DEV_PROMPT_DEFAULT
-        picked=pick.buildModelInput(
-            developer=developer,
-            history=history,
-            userMessage=userText,
-            botCfg=self.botCfg,
-        )
+        picked=pick.buildModelInput(developer=developer,history=history,userMessage=userText,botCfg=self.botCfg)
+        turnNum=self.turnCount+1
+        eventSink=None
+        if self.botCfg['saveSessions']:
+            store.appendUser(self.sessionPath,turnNum,userText)
+            self.turnCount=turnNum
+
+            def eventSink(event):
+                row=dict(event)
+                entryType=row.pop('entryType')
+                roundNum=row.pop('round',None)
+                store.appendTraceEvent(self.sessionPath,turnNum,entryType,roundNum=roundNum,**row)
         try:
             result=react.run(
-                self.cfg,
-                self.sdk,
-                picked['system'],
-                list(picked['messages']),
-                toolLst=humpyTools.schema(),
-                repoRoot=str(ROOT_DIR),
-                maxRound=self.botCfg.get('maxAgentRound',6),
-                maxToken=maxToken,
-                temperature=self.botCfg['temperature'],
+                self.cfg,self.sdk,picked['system'],list(picked['messages']),
+                toolLst=humpyTools.schema(),repoRoot=str(ROOT_DIR),
+                maxRound=self.botCfg.get('maxAgentRound',6),maxToken=maxToken,
+                temperature=self.botCfg['temperature'],eventSink=eventSink,
             )
         except Exception as exc:
+            if self.botCfg['saveSessions']:
+                store.appendTraceEvent(self.sessionPath,turnNum,'turn_end',status='model_error',error=str(exc))
+            else:
+                self.turnCount=turnNum
             raise SystemExit(f'model call failed: {exc}') from exc
         newHeadline=None
         if self.botCfg['saveSessions']:
-            nextTurn=self.turnCount+1
-            store.appendTurn(
-                self.sessionPath,
-                nextTurn,
-                userText,
-                result['text'],
-                self.modelName,
-                usage=result.get('usage'),
+            store.appendAssistant(self.sessionPath,turnNum,result['text'],self.modelName,usage=result.get('usage'))
+            store.appendTraceEvent(
+                self.sessionPath,turnNum,'turn_end',
+                status=result.get('stopReason') or 'completed',rounds=result.get('round'),
             )
-            self.turnCount=nextTurn
             if self.botCfg['autoTitle'] and self.turnCount==1:
                 newHeadline=self.applyAutoTitle(userText)
         else:
-            self.turnCount+=1
+            self.turnCount=turnNum
         return {
-            'text':result['text'],
-            'usage':result.get('usage'),
-            'round':result.get('round'),
-            'turn':self.turnCount,
-            'sessionId':self.sessionId,
-            'sessionPath':self.sessionPath,
-            'botName':self.botName,
-            'headline':newHeadline,
+            'text':result['text'],'usage':result.get('usage'),'round':result.get('round'),
+            'stopReason':result.get('stopReason'),'turn':self.turnCount,'sessionId':self.sessionId,
+            'sessionPath':self.sessionPath,'botName':self.botName,'headline':newHeadline,
         }

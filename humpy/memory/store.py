@@ -27,11 +27,7 @@ def loadSessionHistory(sessionPath):
                 devPart.append(row.get('content') or '')
                 continue
             if role in ('user','assistant'):
-                out.append({
-                    'role':role,
-                    'content':row.get('content') or '',
-                    'turn':row.get('turn'),
-                })
+                out.append({'role':role,'content':row.get('content') or '','turn':row.get('turn')})
     devFromFile='\n\n'.join(p for p in devPart if p).strip() or None
     return out,devFromFile
 
@@ -54,13 +50,28 @@ def sessionTurnCount(sessionPath):
     '''Turn count from session jsonl only (index is not updated per turn).'''
     return maxTurnInSession(sessionPath)
 
-def appendTurn(sessionPath,turnNum,user,assistant,model,usage=None,ts=None):
+def appendUser(sessionPath,turnNum,user,ts=None):
     t=ts or nowIso()
     appendLine(sessionPath,{'role':'user','turn':turnNum,'content':user,'ts':t})
+
+def appendAssistant(sessionPath,turnNum,assistant,model,usage=None,ts=None):
+    t=ts or nowIso()
+    row={'role':'assistant','turn':turnNum,'model':model,'content':assistant,'ts':t}
     if usage is not None:
-        row={'role':'assistant','turn':turnNum,'model':model,'usage':usage,'content':assistant,'ts':t}
-    else:
-        row={'role':'assistant','turn':turnNum,'model':model,'content':assistant,'ts':t}
+        row['usage']=usage
+    appendLine(sessionPath,row)
+
+def appendTurn(sessionPath,turnNum,user,assistant,model,usage=None,ts=None):
+    t=ts or nowIso()
+    appendUser(sessionPath,turnNum,user,ts=t)
+    appendAssistant(sessionPath,turnNum,assistant,model,usage=usage,ts=t)
+
+def appendTraceEvent(sessionPath,turnNum,entryType,*,roundNum=None,ts=None,**data):
+    '''Append a normalized agent trace event; conversation loading ignores it.'''
+    row={'entryType':entryType,'turn':turnNum,'ts':ts or nowIso()}
+    if roundNum is not None:
+        row['round']=roundNum
+    row.update(data)
     appendLine(sessionPath,row)
 
 def indexHasSession(indexFile,sid):
@@ -142,25 +153,13 @@ def sessionLastUpdated(sessionPath,fallback=''):
 
 def exportSessionMarkdown(outPath,*,botName,sessionId,title,turnCount,sessionPath):
     history,_=loadSessionHistory(sessionPath)
-    line=[
-        f'# {title or "(untitled)"}',
-        '',
-        f'- bot: {botName}',
-        f'- sessionId: {sessionId}',
-        f'- turnCount: {turnCount}',
-        '',
-        '---',
-        '',
-    ]
+    line=[f'# {title or "(untitled)"}','',f'- bot: {botName}',f'- sessionId: {sessionId}',f'- turnCount: {turnCount}','','---','']
     for msg in history:
         role=msg.get('role') or ''
         if role not in ('user','assistant'):
             continue
         label='User' if role=='user' else 'Assistant'
-        line.append(f'## {label}')
-        line.append('')
-        line.append(msg.get('content') or '')
-        line.append('')
+        line.extend([f'## {label}','',msg.get('content') or '',''])
     parent=os.path.dirname(os.path.abspath(outPath))
     if parent:
         os.makedirs(parent,exist_ok=True)
