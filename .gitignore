@@ -6,3 +6,4 @@ playground/mini/history/
 *__pycache__*
 *.code-workspace
 *.egg-info*
+.DS_Store
