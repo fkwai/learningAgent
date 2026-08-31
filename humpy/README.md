@@ -1,6 +1,6 @@
 # Humpy package
 
-Core library for the Humpy CLI agent. Repo-level setup and run instructions live in the [root README](../README.md).
+Core library for the Humpy CLI agent — the **thinking / API-LLM** side of the office. Repo vision (Humpy vs Benerd) and setup live in the [root README](../README.md). **Focus now: Humpy only**; tools stay in this package.
 
 ## Layout
 
@@ -15,6 +15,13 @@ learningAgent/
     memory/
       store.py       jsonl + index persistence
       pick.py        latest-N context selection for the model
+    tools/
+      listDir.py     list_dir
+      readFile.py    read_file
+      shell.py       shell (CLI wrapper)
+      __init__.py    schema() + run(name, arg)
+    react.py         ReAct agent loop
+    message.py       LLM + tool wire format
 ```
 
 ## Config
@@ -38,8 +45,10 @@ There is **no** `bot.json` under `.env/`. The default bot shape lives only as `d
 | `prompt.py` | Built-in fallbacks (`DEV_PROMPT_DEFAULT`) |
 | `memory/store.py` | Session jsonl and index; `turnCount` |
 | `memory/pick.py` | API-ready messages from `bot.json` limits |
-| `message.py` | LLM call (lazy-imports one SDK per `bot.json` `sdk`) |
-| `session.py` | `ChatSession` — pick → call → save on success |
+| `message.py` | LLM call + optional tools; `appendToolRound` for openai/anthropic |
+| `react.py` | ReAct loop — complete → tools.run → observe → repeat |
+| `session.py` | `ChatSession` — pick → `react.run` → save final text |
+| `tools/` | Tool schema + `run()` (`list_dir`, `read_file`, `shell`) |
 | `commands.py` | Slash commands (no LLM) |
 | `cli.py` | Interactive CLI |
 
@@ -53,9 +62,13 @@ There is **no** `bot.json` under `.env/`. The default bot shape lives only as `d
 cli → session.turn()
   → store.loadSessionHistory
   → pick.buildModelInput (botCfg)
-  → message.complete (lazy SDK import)
-  on success → store.appendTurn (turn count lives in session jsonl)
+  → react.run (tools.schema, ROOT_DIR, maxAgentRound)
+       → message.complete (+ tools)
+       → tools.run / appendToolRound (repeat)
+  on success → store.appendTurn (final text only; tool trace not persisted yet)
 ```
+
+Optional bot.json key: `maxAgentRound` (default `6`).
 
 ## Session ids
 

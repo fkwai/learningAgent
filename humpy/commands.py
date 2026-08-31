@@ -26,18 +26,18 @@ def _cmdStatus(sess):
     print(f'maxRecentTurns: {sess.botCfg["maxRecentTurns"]}')
     print(f'maxContextTokens: {sess.botCfg["maxContextTokens"]}')
 
-def _cmdSessions(sess,listLimit):
-    rows=store.listAllSessions(sess.indexFile)
-    if not rows:
+def _cmdSession(sess,lstLimit):
+    row=store.listAllSession(sess.indexFile)
+    if not row:
         print('(no sessions)')
         return
-    rows=list(reversed(rows[-listLimit:]))
-    for row in rows:
-        sid=row.get('sessionId') or ''
-        title=(row.get('headline') or '').strip() or '(untitled)'
-        sp=row.get('sessionFile') or ''
+    row=list(reversed(row[-lstLimit:]))
+    for r in row:
+        sid=r.get('sessionId') or ''
+        title=(r.get('headline') or '').strip() or '(untitled)'
+        sp=r.get('sessionFile') or ''
         tc=store.sessionTurnCount(sp) if sp else 0
-        updated=fmtTs(store.sessionLastUpdated(sp,row.get('createdAt','')))
+        updated=fmtTs(store.sessionLastUpdated(sp,r.get('createdAt','')))
         print(f'{sid} | {title} | turns {tc} | {updated}')
 
 def _cmdLoad(sess,pickId,arg):
@@ -94,11 +94,11 @@ def _cmdTitle(sess,arg):
     print(f'title: {title}')
     return None,sess
 
-def dispatch(line,sess,pickId=None,listLimit=20):
+def dispatch(line,sess,pickId=None,lstLimit=20):
     '''Returns (shouldExit, session).'''
-    parts=shlex.split(line)
-    cmd=(parts[0] or '').lower()
-    arg=' '.join(parts[1:]).strip() if len(parts)>1 else ''
+    part=shlex.split(line)
+    cmd=(part[0] or '').lower()
+    arg=' '.join(part[1:]).strip() if len(part)>1 else ''
     if cmd in ('/exit','/quit'):
         return True,sess
     if cmd=='/help':
@@ -108,7 +108,7 @@ def dispatch(line,sess,pickId=None,listLimit=20):
         _cmdStatus(sess)
         return False,sess
     if cmd=='/sessions':
-        _cmdSessions(sess,listLimit)
+        _cmdSession(sess,lstLimit)
         return False,sess
     if cmd=='/load':
         return _cmdLoad(sess,pickId,arg)
