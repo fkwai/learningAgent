@@ -2,6 +2,7 @@
 !.env.example/
 .data/
 data/chatloop/
+playground/mini/history/
 *__pycache__*
 *.code-workspace
 *.egg-info*
