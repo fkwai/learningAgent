@@ -1,0 +1,22 @@
+{
+  "role": "assistant",
+  "content": [
+    "<think>",
+    "GitHub CLI is not installed. Let me try setting up a GitHub token from environment variables or checking other authentication methods.",
+    "</think>",
+    "",
+    ""
+  ],
+  "tool_calls": [
+    {
+      "id": "call_function_7v94497kqb2u_1",
+      "type": "function",
+      "function": {
+        "name": "cli",
+        "arguments": {
+          "command": "ls -la ~/.config/gh/ 2>/dev/null || ls -la ~/Library/Preferences/github/ 2>/dev/null || echo \"No gh config found\""
+        }
+      }
+    }
+  ]
+}

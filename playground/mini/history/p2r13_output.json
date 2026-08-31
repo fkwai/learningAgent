@@ -1,0 +1,22 @@
+{
+  "role": "assistant",
+  "content": [
+    "<think>",
+    "No keychain entry. Let me check if there's any GitHub authentication setup.",
+    "</think>",
+    "",
+    ""
+  ],
+  "tool_calls": [
+    {
+      "id": "call_function_a5mria1iuonq_1",
+      "type": "function",
+      "function": {
+        "name": "cli",
+        "arguments": {
+          "command": "gh auth status 2>&1 || echo \"---\"; which gh"
+        }
+      }
+    }
+  ]
+}

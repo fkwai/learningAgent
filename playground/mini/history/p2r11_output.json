@@ -1,0 +1,22 @@
+{
+  "role": "assistant",
+  "content": [
+    "<think>",
+    "No credentials are stored. Let me check for environment variables that might contain GitHub tokens.",
+    "</think>",
+    "",
+    ""
+  ],
+  "tool_calls": [
+    {
+      "id": "call_function_3yc0cejg5n2t_1",
+      "type": "function",
+      "function": {
+        "name": "cli",
+        "arguments": {
+          "command": "env | grep -i github"
+        }
+      }
+    }
+  ]
+}

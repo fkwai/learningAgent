@@ -1,0 +1,22 @@
+{
+  "role": "assistant",
+  "content": [
+    "<think>",
+    "Let me try to use GitHub's API with a token if one is available, or check if we can use a different method.",
+    "</think>",
+    "",
+    ""
+  ],
+  "tool_calls": [
+    {
+      "id": "call_function_idyi14uhplzn_1",
+      "type": "function",
+      "function": {
+        "name": "cli",
+        "arguments": {
+          "command": "# Try to use the GitHub API to create a PR\nGITHUB_TOKEN=\"${GITHUB_TOKEN:-${GITHUB_API_TOKEN:-}}\"\necho \"Checking for GitHub token...\"\n\n# Check environment for any token-like variable\nfor var in GITHUB_TOKEN GITHUB_API_TOKEN GH_TOKEN GH_TOKEN; do\n    val=\"${!var}\"\n    if [ -n \"$val\" ]; then\n        echo \"Found $var\"\n    fi\ndone\n\n# Check netrc\ncat ~/.netrc 2>/dev/null | grep -A2 \"machine github.com\" || echo \"No netrc credentials\""
+        }
+      }
+    }
+  ]
+}

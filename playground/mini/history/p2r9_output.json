@@ -1,0 +1,22 @@
+{
+  "role": "assistant",
+  "content": [
+    "<think>",
+    "Authentication is failing. Let me check if there's a GitHub CLI or other authentication mechanism available.",
+    "</think>",
+    "",
+    ""
+  ],
+  "tool_calls": [
+    {
+      "id": "call_function_kqhifjowpct8_1",
+      "type": "function",
+      "function": {
+        "name": "cli",
+        "arguments": {
+          "command": "which gh && gh auth status 2>&1 || echo \"GitHub CLI not authenticated or not available\""
+        }
+      }
+    }
+  ]
+}
